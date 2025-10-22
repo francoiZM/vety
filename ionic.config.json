@@ -1,0 +1,7 @@
+{
+  "name": "crud-vety",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
