@@ -1,0 +1,48 @@
+
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+      <ion-title>calculoDosis</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!--input para ingresar el peso de la mascota y calcularlo en base a eso con los medicamenteos seleccionados en inventario-m.page.html-->
+  <ion-content class="ion-padding">
+    <ion-list>
+      <ion-list-header>
+        <ion-label>Medicamentos Seleccionados</ion-label>
+      </ion-list-header>
+      <ion-item *ngFor="let med of medicamentoSeleccionado">
+        <ion-label>{{ med.nombre }}</ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-item>
+      <ion-label position="floating">Peso de la mascota (kg)</ion-label>
+      <ion-input type="number" [(ngModel)]="pesoMascota"></ion-input>
+    </ion-item>
+
+    <ion-button
+      expand="full"
+      (click)="calcularDosis()"
+      class="ion-margin-top"
+      [disabled]="!pesoMascota || medicamentoSeleccionado.length === 0"
+    >
+      Calcular Dosis
+    </ion-button>
+
+    <!-- Mostrar resultados de dosis calculadas -->
+    <ion-list *ngIf="dosisCalculadas.length > 0">
+      <ion-list-header>
+        <ion-label>Dosis Calculadas</ion-label>
+      </ion-list-header>
+      <ion-item *ngFor="let dosis of dosisCalculadas">
+        <ion-label>
+          <h2>{{ dosis.medicamento }}</h2>
+          <p>Dosis: {{ dosis.cantidad.toFixed(2) }} ml</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+

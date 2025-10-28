@@ -1,0 +1,68 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>VETy</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="login-wrapper">
+    <ion-grid>
+      <ion-row class="ion-justify-content-center">
+        <!-- En móvil ocupa todo el ancho; en pantallas medianas centra y reduce ancho -->
+        <ion-col size="12" size-sm="8" size-md="6" size-lg="4">
+          <ion-card class="login-card">
+            <ion-card-header>
+              <ion-card-title>Iniciar sesión</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+              <form (ngSubmit)="login()" class="login-form">
+                <ion-item>
+                  <ion-label position="floating">Correo Electrónico</ion-label>
+                  <br>
+                  <ion-input
+                    [(ngModel)]="email"
+                    name="email"
+                    type="email"
+                    placeholder="usuario@ejemplo.com"
+                    required
+                    autocomplete="email"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item>
+                  <ion-label position="floating">Contraseña</ion-label>
+                  <br>
+                  <ion-input
+                    [(ngModel)]="password"
+                    name="password"
+                    type="password"
+                    placeholder="Ingresa tu contraseña"
+                    required
+                    autocomplete="current-password"
+                  ></ion-input>
+                </ion-item>
+
+                <ion-text color="danger" *ngIf="errorMessage" class="error-message">
+                  {{ errorMessage }}
+                </ion-text>
+
+                <ion-button expand="block" type="submit" class="login-button" color="primary">
+                  Ingresar
+                </ion-button>
+
+                <ion-button expand="block" fill="clear" (click)="Registro()">
+                  Registrarse
+                </ion-button>
+              </form>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+</ion-content>
+

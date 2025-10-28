@@ -1,0 +1,47 @@
+/* ...existing code... */
+
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Restar altura del header para centrar verticalmente */
+  min-height: calc(100vh - 56px);
+  padding: 16px 0;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 480px; /* evita que la tarjeta se haga demasiado ancha en desktop */
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  border-radius: 10px;
+}
+
+.login-form ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 12px;
+}
+
+.login-button {
+  margin-top: 12px;
+}
+
+/* Mensaje de error con espacio */
+.error-message {
+  display: block;
+  margin: 8px 0 12px;
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 360px) {
+  .login-card {
+    padding: 8px;
+  }
+}
+
+/* Mantener contraste legible si cambias colores */
+ion-col {
+  text-align: center;
+}
+
+/* ...existing code... */

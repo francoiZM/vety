@@ -1,0 +1,32 @@
+ion-card {
+  margin: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.selected {
+    border: 2px solid var(--ion-color-success);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+ion-searchbar {
+  margin-bottom: 1rem;
+}
+
+ion-chip {
+  margin: 8px;
+}
+
+ion-card-content {
+  padding: 8px;
+}
+
+ion-fab {
+  margin-bottom: 16px;
+  margin-right: 16px;
+}
