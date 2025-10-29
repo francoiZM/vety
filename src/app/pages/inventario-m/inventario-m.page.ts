@@ -33,6 +33,17 @@ import {
     IonMenuToggle
 } from '@ionic/angular/standalone';
 
+interface Medicamento {
+  id: number;
+  nombre: string;
+  principioactivo: string;
+  categoria: string;
+  concentracion: string;
+  dosis: string;
+  presentacion: string;
+  selected: boolean;
+}
+
 @Component({
   selector: 'app-inventario-m',
   templateUrl: './inventario-m.page.html',
@@ -69,11 +80,10 @@ import {
     IonIcon,IonFooter,IonMenuToggle
   ]
 })
+
+
 export class InventarioMPage implements OnInit {
-
-
-
-  medicamentos = [
+  medicamentos: Medicamento[] = [
     {
       id: 1,
       nombre: 'Meloxivet perros',
@@ -106,7 +116,7 @@ export class InventarioMPage implements OnInit {
     }
   ];
 
-  medicamentosFiltrados = [...this.medicamentos];
+
   searchTerm = '';
 
   constructor(private router: Router) {
@@ -153,12 +163,12 @@ export class InventarioMPage implements OnInit {
 
   FiltrarMedicamento() {
     if (this.searchTerm) {
-      this.medicamentosFiltrados = this.medicamentos.filter(med => 
+      this.medicamentos = this.medicamentos.filter(med => 
         med.nombre.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         med.categoria.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     } else {
-      this.medicamentosFiltrados = [...this.medicamentos];
+      this.medicamentos;
     }
   }
 

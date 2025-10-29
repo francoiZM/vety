@@ -14,7 +14,7 @@
 
     <ion-grid>
       <ion-row>
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="3" *ngFor="let medicamento of medicamentosFiltrados">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="3" *ngFor="let medicamento of medicamentos">
           <ion-card [class.selected]="medicamento.selected" (click)="seleccionarMedicamento(medicamento)">
             <ion-card-header>
               <ion-card-title>{{ medicamento.nombre }}</ion-card-title>
