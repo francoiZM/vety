@@ -101,7 +101,6 @@
   <div *ngIf="!mostrandoFormulario">
     <ion-searchbar placeholder="Buscar medicamento" [(ngModel)]="searchTerm" (ionChange)="FiltrarMedicamento()"></ion-searchbar>
     <div class="ion-padding-vertical" *ngIf="!mostrandoFormulario">
-      <!-- Botón ajustado al contenido y alineado al inicio -->
       <ion-button color="primary" class="ion-align-self-start" size="small" (click)="abrirFormularioCrear()">
         <ion-icon name="add-circle-outline" slot="start"></ion-icon>
         Agregar Medicamento
