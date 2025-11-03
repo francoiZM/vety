@@ -77,7 +77,7 @@ export class CalculoDosisPage implements OnInit {
   ngOnInit() {
      this.route.queryParams.subscribe(params => {
       if (params['medicamentos']) {
-        // Recibimos directamente los medicamentos seleccionados
+ 
         this.medicamentoSeleccionado = JSON.parse(params['medicamentos']);
       }
     });

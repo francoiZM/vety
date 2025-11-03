@@ -1,26 +1,122 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Inventario</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <ion-header>
-    <ion-toolbar>
-      <ion-buttons slot="start">
-        <ion-menu-button></ion-menu-button>
-      </ion-buttons>
-      <ion-title>Inventario</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  
+  <div *ngIf="mostrandoFormulario">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          {{ medicamentoSeleccionado ? 'Actualizar Medicamento' : 'Agregar Nuevo Medicamento' }}
+        </ion-card-title>
+      </ion-card-header>
+      <!--formulario de actualizar y crear -->
+      <ion-card-content>
+        <form [formGroup]="formularioMedicamento" (ngSubmit)="guardarMedicamento()">
+          
+          <ion-list lines="full" class="ion-no-margin ion-no-padding">
+            
+            <ion-item>
+              <ion-input label="Nombre" labelPlacement="stacked" formControlName="nombre" type="text" placeholder="Ej: Meloxivet perros"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('nombre')?.hasError('required') && formularioMedicamento.get('nombre')?.touched">
+                El nombre es **obligatorio**.
+              </ion-note>
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('nombre')?.hasError('maxlength')">
+                El nombre es demasiado largo.
+              </ion-note>
+            </div>
 
-  <ion-content class="ion-padding">
+            <ion-item>
+              <ion-input label="Principio Activo" labelPlacement="stacked" formControlName="principioactivo" type="text" placeholder="Ej: Meloxicam"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('principioactivo')?.hasError('required') && formularioMedicamento.get('principioactivo')?.touched">
+                El principio activo es **obligatorio**.
+              </ion-note>
+            </div>
 
+            <ion-item>
+              <ion-input label="Categoría" labelPlacement="stacked" formControlName="categoria" type="text" placeholder="Ej: Analgésico"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('categoria')?.hasError('required') && formularioMedicamento.get('categoria')?.touched">
+                La categoría es **obligatoria**.
+              </ion-note>
+            </div>
+
+            <ion-item>
+              <ion-input label="Concentración" labelPlacement="stacked" formControlName="concentracion" type="text" placeholder="Ej: 1 mg/ml"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('concentracion')?.hasError('required') && formularioMedicamento.get('concentracion')?.touched">
+                La concentración es **obligatoria**.
+              </ion-note>
+            </div>
+
+            <ion-item>
+              <ion-input label="Dosis Estándar" labelPlacement="stacked" formControlName="dosis" type="text" placeholder="Ej: 0.1 ml/kg"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('dosis')?.hasError('required') && formularioMedicamento.get('dosis')?.touched">
+                La dosis es **obligatoria**.
+              </ion-note>
+            </div>
+
+            <ion-item>
+              <ion-input label="Presentación" labelPlacement="stacked" formControlName="presentacion" type="text" placeholder="Ej: Suspensión"></ion-input>
+            </ion-item>
+            <div class="ion-padding-start ion-padding-bottom">
+              <ion-note color="danger" *ngIf="formularioMedicamento.get('presentacion')?.hasError('required') && formularioMedicamento.get('presentacion')?.touched">
+                La presentación es **obligatoria**.
+              </ion-note>
+            </div>
+            
+          </ion-list>
+
+          <ion-button expand="full" type="submit" [disabled]="formularioMedicamento.invalid" class="ion-margin-top">
+            Guardar
+          </ion-button>
+          
+          <ion-button expand="full" color="medium" (click)="mostrandoFormulario = false" fill="clear">
+            Cancelar
+          </ion-button>
+          
+          <ion-button *ngIf="medicamentoSeleccionado" expand="full" color="danger" (click)="confirmarYEliminar(medicamentoSeleccionado!.id)" class="ion-margin-top">
+            Eliminar Medicamento
+          </ion-button>
+
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="!mostrandoFormulario">
     <ion-searchbar placeholder="Buscar medicamento" [(ngModel)]="searchTerm" (ionChange)="FiltrarMedicamento()"></ion-searchbar>
+    <div class="ion-padding-vertical" *ngIf="!mostrandoFormulario">
+      <!-- Botón ajustado al contenido y alineado al inicio -->
+      <ion-button color="primary" class="ion-align-self-start" size="small" (click)="abrirFormularioCrear()">
+        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+        Agregar Medicamento
+      </ion-button>
+    </div>
 
     <ion-grid>
       <ion-row>
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="3" *ngFor="let medicamento of medicamentos">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="3" *ngFor="let medicamento of medicamentosFiltrados">
           <ion-card [class.selected]="medicamento.selected" (click)="seleccionarMedicamento(medicamento)">
             <ion-card-header>
               <ion-card-title>{{ medicamento.nombre }}</ion-card-title>
               <ion-card-subtitle>{{ medicamento.principioactivo }}</ion-card-subtitle>
             </ion-card-header>
-           
+            
             <ion-card-content>
               <ion-list lines="none">
                 <ion-item>
@@ -33,24 +129,27 @@
               </ion-list>
             </ion-card-content>
 
-            <ion-footer>
-              <ion-chip [color]="medicamento.selected ? 'success' : 'medium'" class="ion-margin">
+            <ion-footer class="ion-padding-horizontal">
+              <ion-chip [color]="medicamento.selected ? 'success' : 'medium'" class="ion-margin-end">
                 {{ medicamento.selected ? 'Seleccionado' : 'Seleccionar' }}
               </ion-chip>
-              <ion-button color="danger" (click)="eliminarMedicamento(medicamento.id)">Borrar</ion-button>
-            <!-- actualizar texto del medicamento ingresando nuevo texto -->
-              <ion-button color="primary" (click)="ActualizarMedicamento(medicamento.id, 'nombre', 'Nuevo Nombre')">Editar</ion-button>
-  
+              <ion-button color="primary" fill="outline" (click)="abrirFormularioActualizar(medicamento)">
+                Editar
+              </ion-button>
+              <ion-button color="danger" fill="clear" (click)="confirmarYEliminar(medicamento.id)">
+                Borrar
+              </ion-button>
             </ion-footer>
           </ion-card>
         </ion-col>
       </ion-row>
     </ion-grid>
-
-   
+    
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="haySeleccionados()">
       <ion-fab-button color="primary" (click)="CalcularDosis()">
         <ion-icon name="calculator-outline"></ion-icon>
       </ion-fab-button>
     </ion-fab>
-  </ion-content>
+  </div>
+
+</ion-content>

@@ -1,13 +1,72 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>registro</ion-title>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>VETy</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">registro</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <div class="registro-wrapper">
+    <ion-grid>
+      <ion-row class="ion-justify-content-center">
+        <ion-col size="12" size-sm="8" size-md="6" size-lg="4">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Crear cuenta</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+              <form (ngSubmit)="registro()">
+                <ion-item>
+                  <ion-label position="floating">Correo Electrónico</ion-label>
+                  <br>
+                  <ion-input
+                    [(ngModel)]="email"
+                    name="email"
+                    type="email"
+                    placeholder="usuario@ejemplo.com"
+                    required
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item>
+                  <ion-label position="floating">Contraseña</ion-label>
+                  <br>
+                  <ion-input
+                    [(ngModel)]="password"
+                    name="password"
+                    type="password"
+                    placeholder="Ingresa tu contraseña"
+                    required
+                  ></ion-input>
+                </ion-item>
+
+                <ion-item>
+                  <ion-label position="floating">Confirmar Contraseña</ion-label>
+                    <br>
+                  <ion-input
+                    [(ngModel)]="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="Repite tu contraseña"
+                    required
+                  ></ion-input>
+                </ion-item>
+
+                <ion-text color="danger" *ngIf="errorMessage" class="error-message">
+                  {{ errorMessage }}
+                </ion-text>
+
+                <ion-button expand="block" type="submit" class="ion-margin-top">
+                  Registrarse
+                </ion-button>
+              </form>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
 </ion-content>

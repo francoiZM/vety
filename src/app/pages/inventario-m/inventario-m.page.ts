@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons'; 
-import {calculatorOutline} from 'ionicons/icons';
+import {calculatorOutline, addCircleOutline} from 'ionicons/icons';
 import {Router} from '@angular/router';
 import {
     IonContent,
@@ -30,7 +30,7 @@ import {
     IonFab,
     IonFabButton,
     IonIcon, IonFooter,
-    IonMenuToggle
+    IonMenuToggle, IonNote, AlertController
 } from '@ionic/angular/standalone';
 
 interface Medicamento {
@@ -55,6 +55,7 @@ interface Medicamento {
     IonTitle,
     IonToolbar,
     CommonModule,
+    ReactiveFormsModule,
     FormsModule,
     IonCard,
     IonCol,
@@ -77,7 +78,7 @@ interface Medicamento {
     IonChip,
     IonFab,
     IonFabButton,
-    IonIcon,IonFooter,IonMenuToggle
+    IonIcon,IonFooter,IonMenuToggle, IonNote
   ]
 })
 
@@ -115,19 +116,105 @@ export class InventarioMPage implements OnInit {
       selected: false
     }
   ];
-
-
+  //barra busqueda
   searchTerm = '';
+  //formulario
+  formularioMedicamento!: FormGroup; 
+  medicamentoSeleccionado: Medicamento | null = null; 
+  mostrandoFormulario: boolean = false; 
+  medicamentosFiltrados: Medicamento[] = [];
 
-  constructor(private router: Router) {
-      addIcons({
+  constructor(private router: Router, private fb: FormBuilder, private alertController: AlertController) {
+    addIcons({
       'calculator-outline': calculatorOutline,
+      'add-circle-outline': addCircleOutline,
     });
-   }
+    this.crearFormulario();
+  }
+ //crear formulario
+  crearFormulario(medicamento?: Medicamento) {
+    this.formularioMedicamento = this.fb.group({
+      id: [medicamento ? medicamento.id : null],
+      nombre: [medicamento ? medicamento.nombre : '', [Validators.required, Validators.maxLength(100)]],
+      principioactivo: [medicamento ? medicamento.principioactivo : '', Validators.required],
+      categoria: [medicamento ? medicamento.categoria : '', Validators.required],
+      concentracion: [medicamento ? medicamento.concentracion : '', Validators.required],
+      dosis: [medicamento ? medicamento.dosis : '', Validators.required],
+      presentacion: [medicamento ? medicamento.presentacion : '', Validators.required],
+    });
+  }
 
   ngOnInit() {
     this.FiltrarMedicamento();
   }
+  //abrir formulario crear
+  abrirFormularioCrear() {
+    this.medicamentoSeleccionado = null;
+    this.crearFormulario();
+    this.mostrandoFormulario = true;
+  }
+  //abrir formulario actualizar
+  abrirFormularioActualizar(medicamento: Medicamento) {
+    this.medicamentoSeleccionado = medicamento;
+    this.crearFormulario(medicamento);
+    this.mostrandoFormulario = true;
+  }
+ //guardar medicamento
+  guardarMedicamento() {
+    if (this.formularioMedicamento.invalid) {
+      this.formularioMedicamento.markAllAsTouched(); 
+      return; 
+    }
+
+    const datosGuardar: Medicamento = this.formularioMedicamento.value;
+
+    if (datosGuardar.id) {
+
+      const index = this.medicamentos.findIndex(med => med.id === datosGuardar.id);
+      if (index !== -1) {
+
+        this.medicamentos[index] = { ...datosGuardar, selected: this.medicamentos[index].selected };
+      }
+    } else {
+
+      const nuevoId = this.medicamentos.length > 0 ? Math.max(...this.medicamentos.map(m => m.id)) + 1 : 1;
+      const nuevoMedicamento: Medicamento = { 
+        ...datosGuardar, 
+        id: nuevoId, 
+        selected: false 
+      };
+      this.medicamentos.push(nuevoMedicamento);
+    }
+    
+    this.mostrandoFormulario = false; 
+    this.FiltrarMedicamento(); 
+  }
+  //eliminar con confirmacion
+  async confirmarYEliminar(id: number) {
+    const alert = await this.alertController.create({ 
+      header: 'Confirmar Eliminación',
+      message: '¿Estás seguro de que quieres eliminar este medicamento del inventario? Esta acción es irreversible.',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        },
+        {
+          text: 'Eliminar',
+          cssClass: 'alert-button-danger',
+          handler: () => {
+            this.eliminarMedicamento(id);
+            if (this.medicamentoSeleccionado && this.medicamentoSeleccionado.id === id) {
+                this.mostrandoFormulario = false; 
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+
 
   //crear medicamento
   crearMedicamento() {
@@ -146,14 +233,14 @@ export class InventarioMPage implements OnInit {
   }
 
   //eliminar medicamento
-  eliminarMedicamento(id: number) {
-    this.medicamentos = this.medicamentos.filter(med => med.id !== id);
-    this.FiltrarMedicamento();
+eliminarMedicamento(id: number) {
+     this.medicamentos = this.medicamentos.filter(med => med.id !== id);
+     this.FiltrarMedicamento(); 
   }
 
   //acualizar medicamento con textos nombre, categoria, presentacion
 
-  ActualizarMedicamento(id: number, campo: 'nombre' | 'categoria' | 'presentacion' | 'principioactivo' | 'concentracion', valor: string) {
+  actualizarMedicamento(id: number, campo: 'nombre' | 'categoria' | 'presentacion' | 'principioactivo' | 'concentracion', valor: string) {
     const medicamento = this.medicamentos.find(med => med.id === id);
     if (medicamento) {
       medicamento[campo] = valor;
@@ -163,17 +250,20 @@ export class InventarioMPage implements OnInit {
 
   FiltrarMedicamento() {
     if (this.searchTerm) {
-      this.medicamentos = this.medicamentos.filter(med => 
+      this.medicamentosFiltrados = this.medicamentos.filter(med => 
         med.nombre.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        med.categoria.toLowerCase().includes(this.searchTerm.toLowerCase())
+        med.categoria.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        med.principioactivo.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     } else {
-      this.medicamentos;
+      this.medicamentosFiltrados = [...this.medicamentos]; 
     }
   }
 
-  seleccionarMedicamento(medicamento: any) {
-    medicamento.selected = !medicamento.selected;
+  seleccionarMedicamento(medicamento: Medicamento) {
+    if (!this.mostrandoFormulario) { 
+      medicamento.selected = !medicamento.selected;
+    }
   }
 
   haySeleccionados(): boolean {
