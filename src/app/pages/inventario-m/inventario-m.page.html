@@ -9,6 +9,7 @@
 
 <ion-content class="ion-padding">
   
+
   <div *ngIf="mostrandoFormulario">
     <ion-card>
       <ion-card-header>
@@ -16,12 +17,18 @@
           {{ medicamentoSeleccionado ? 'Actualizar Medicamento' : 'Agregar Nuevo Medicamento' }}
         </ion-card-title>
       </ion-card-header>
-      <!--formulario de actualizar y crear -->
       <ion-card-content>
+        <!-- Imagen del medicamento -->
+        <div class="medicamento-imagen-formulario" *ngIf="imagenCapturada">
+          <img [src]="imagenCapturada" alt="Foto del medicamento" />
+        </div>
+        <ion-button expand="block" color="active" (click)="tomarFoto()" class="ion-margin-bottom medicamento-foto-btn">
+          <ion-icon name="camera-outline" slot="icon-only"></ion-icon>
+          <span class="foto-btn-text">Agregar/Actualizar Foto</span>
+        </ion-button>
         <form [formGroup]="formularioMedicamento" (ngSubmit)="guardarMedicamento()">
-          
           <ion-list lines="full" class="ion-no-margin ion-no-padding">
-            
+            <!-- ...existing code for inputs and notes... -->
             <ion-item>
               <ion-input label="Nombre" labelPlacement="stacked" formControlName="nombre" type="text" placeholder="Ej: Meloxivet perros"></ion-input>
             </ion-item>
@@ -33,7 +40,6 @@
                 El nombre es demasiado largo.
               </ion-note>
             </div>
-
             <ion-item>
               <ion-input label="Principio Activo" labelPlacement="stacked" formControlName="principioactivo" type="text" placeholder="Ej: Meloxicam"></ion-input>
             </ion-item>
@@ -42,7 +48,6 @@
                 El principio activo es **obligatorio**.
               </ion-note>
             </div>
-
             <ion-item>
               <ion-input label="Categoría" labelPlacement="stacked" formControlName="categoria" type="text" placeholder="Ej: Analgésico"></ion-input>
             </ion-item>
@@ -51,7 +56,6 @@
                 La categoría es **obligatoria**.
               </ion-note>
             </div>
-
             <ion-item>
               <ion-input label="Concentración" labelPlacement="stacked" formControlName="concentracion" type="text" placeholder="Ej: 1 mg/ml"></ion-input>
             </ion-item>
@@ -60,7 +64,6 @@
                 La concentración es **obligatoria**.
               </ion-note>
             </div>
-
             <ion-item>
               <ion-input label="Dosis Estándar" labelPlacement="stacked" formControlName="dosis" type="text" placeholder="Ej: 0.1 ml/kg"></ion-input>
             </ion-item>
@@ -69,7 +72,6 @@
                 La dosis es **obligatoria**.
               </ion-note>
             </div>
-
             <ion-item>
               <ion-input label="Presentación" labelPlacement="stacked" formControlName="presentacion" type="text" placeholder="Ej: Suspensión"></ion-input>
             </ion-item>
@@ -78,21 +80,16 @@
                 La presentación es **obligatoria**.
               </ion-note>
             </div>
-            
           </ion-list>
-
           <ion-button expand="full" type="submit" [disabled]="formularioMedicamento.invalid" class="ion-margin-top">
             Guardar
           </ion-button>
-          
           <ion-button expand="full" color="medium" (click)="mostrandoFormulario = false" fill="clear">
             Cancelar
           </ion-button>
-          
           <ion-button *ngIf="medicamentoSeleccionado" expand="full" color="danger" (click)="confirmarYEliminar(medicamentoSeleccionado!.id)" class="ion-margin-top">
             Eliminar Medicamento
           </ion-button>
-
         </form>
       </ion-card-content>
     </ion-card>
@@ -115,7 +112,10 @@
               <ion-card-title>{{ medicamento.nombre }}</ion-card-title>
               <ion-card-subtitle>{{ medicamento.principioactivo }}</ion-card-subtitle>
             </ion-card-header>
-            
+            <!-- Imagen del medicamento en la card -->
+            <div class="medicamento-imagen-card" *ngIf="medicamento.imagen">
+              <img [src]="medicamento.imagen" alt="Foto del medicamento" />
+            </div>
             <ion-card-content>
               <ion-list lines="none">
                 <ion-item>
@@ -127,7 +127,6 @@
                 </ion-item>
               </ion-list>
             </ion-card-content>
-
             <ion-footer class="ion-padding-horizontal">
               <ion-chip [color]="medicamento.selected ? 'success' : 'medium'" class="ion-margin-end">
                 {{ medicamento.selected ? 'Seleccionado' : 'Seleccionar' }}

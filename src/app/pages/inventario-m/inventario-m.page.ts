@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons'; 
 import {calculatorOutline, addCircleOutline} from 'ionicons/icons';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import {Router} from '@angular/router';
 import {
     IonContent,
@@ -42,6 +43,7 @@ interface Medicamento {
   dosis: string;
   presentacion: string;
   selected: boolean;
+  imagen?: string;
 }
 
 @Component({
@@ -84,6 +86,10 @@ interface Medicamento {
 
 
 export class InventarioMPage implements OnInit {
+
+  imagenCapturada: string | undefined;
+  medicamentoEnEdicionId: number | null = null;
+
   medicamentos: Medicamento[] = [
     {
       id: 1,
@@ -142,20 +148,26 @@ export class InventarioMPage implements OnInit {
       dosis: [medicamento ? medicamento.dosis : '', Validators.required],
       presentacion: [medicamento ? medicamento.presentacion : '', Validators.required],
     });
+    // Si el medicamento tiene imagen, la mostramos en el formulario
+    this.imagenCapturada = medicamento?.imagen;
   }
 
   ngOnInit() {
     this.FiltrarMedicamento();
   }
+
+
   //abrir formulario crear
   abrirFormularioCrear() {
     this.medicamentoSeleccionado = null;
+    this.medicamentoEnEdicionId = null;
     this.crearFormulario();
     this.mostrandoFormulario = true;
   }
   //abrir formulario actualizar
   abrirFormularioActualizar(medicamento: Medicamento) {
     this.medicamentoSeleccionado = medicamento;
+    this.medicamentoEnEdicionId = medicamento.id;
     this.crearFormulario(medicamento);
     this.mostrandoFormulario = true;
   }
@@ -167,16 +179,17 @@ export class InventarioMPage implements OnInit {
     }
 
     const datosGuardar: Medicamento = this.formularioMedicamento.value;
+    // Asignar imagen capturada si existe
+    if (this.imagenCapturada) {
+      datosGuardar.imagen = this.imagenCapturada;
+    }
 
     if (datosGuardar.id) {
-
       const index = this.medicamentos.findIndex(med => med.id === datosGuardar.id);
       if (index !== -1) {
-
         this.medicamentos[index] = { ...datosGuardar, selected: this.medicamentos[index].selected };
       }
     } else {
-
       const nuevoId = this.medicamentos.length > 0 ? Math.max(...this.medicamentos.map(m => m.id)) + 1 : 1;
       const nuevoMedicamento: Medicamento = { 
         ...datosGuardar, 
@@ -185,9 +198,9 @@ export class InventarioMPage implements OnInit {
       };
       this.medicamentos.push(nuevoMedicamento);
     }
-    
     this.mostrandoFormulario = false; 
     this.FiltrarMedicamento(); 
+    this.imagenCapturada = undefined;
   }
   //eliminar con confirmacion
   async confirmarYEliminar(id: number) {
@@ -279,5 +292,30 @@ eliminarMedicamento(id: number) {
     }
   });
 }
+
+  async tomarFoto() {
+    try {
+      const foto = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+
+       
+      });
+      this.imagenCapturada = foto.dataUrl;
+      // La imagen se mostrará en el formulario y se guardará al guardarMedicamento
+      // Si estamos editando, actualizamos la imagen en el objeto seleccionado
+      if (this.medicamentoEnEdicionId) {
+        const med = this.medicamentos.find(m => m.id === this.medicamentoEnEdicionId);
+        if (med) {
+          med.imagen = this.imagenCapturada;
+        }
+      }
+    } catch (e) {
+      console.error('Error al tomar la foto:', e);
+    }
   }
+
+}
 
