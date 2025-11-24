@@ -44,5 +44,18 @@
         </ion-label>
       </ion-item>
     </ion-list>
+    <div *ngIf="dosisCalculadas.length > 0" class="ion-margin-top">
+      <ion-item>
+        <ion-label position="stacked">Hora de notificación</ion-label>
+        <ion-input type="time" [(ngModel)]="horaNotificacion"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Cantidad de días</ion-label>
+        <ion-input type="number" min="1" [(ngModel)]="diasNotificacion"></ion-input>
+      </ion-item>
+      <ion-button expand="block" color="primary" class="ion-margin-top" (click)="crearTareaRecordatorio()">
+        Crear tarea y programar recordatorio
+      </ion-button>
+    </div>
   </ion-content>
 

@@ -1,0 +1,55 @@
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+      <ion-title>tareas</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">tareas</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-list *ngIf="tareas.length > 0">
+    <ion-list-header>
+      <ion-label>Tareas programadas</ion-label>
+    </ion-list-header>
+    <ion-item *ngFor="let tarea of tareas; let i = index">
+      <ion-label *ngIf="editIndex !== i">
+        <h2>Medicamentos:</h2>
+        <ul>
+          <li *ngFor="let med of tarea.medicamentos">
+            {{ med.medicamento }} - Dosis: {{ med.cantidad.toFixed(2) }} ml
+          </li>
+        </ul>
+        <p><strong>Peso mascota:</strong> {{ tarea.pesoMascota }} kg</p>
+        <p><strong>Próxima dosis:</strong> {{ tarea.fecha | date:'short' }}</p>
+      </ion-label>
+      <ion-label *ngIf="editIndex === i">
+        <h2>Editar tarea</h2>
+        <ion-item>
+          <ion-label position="stacked">Hora</ion-label>
+          <ion-input type="time" [(ngModel)]="tareaEditando.fecha"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Peso mascota</ion-label>
+          <ion-input type="number" [(ngModel)]="tareaEditando.pesoMascota"></ion-input>
+        </ion-item>
+        <ion-button color="success" (click)="guardarEdicion()">Guardar</ion-button>
+        <ion-button color="medium" (click)="cancelarEdicion()">Cancelar</ion-button>
+      </ion-label>
+      <ion-button color="danger" fill="clear" slot="end" (click)="eliminarTarea(i)">Eliminar</ion-button>
+      <ion-button color="primary" fill="outline" slot="end" (click)="iniciarEdicion(i)" *ngIf="editIndex !== i">Editar</ion-button>
+    </ion-item>
+  </ion-list>
+  <div class="ion-padding">
+    <ion-button expand="block" color="primary" (click)="agregarTarea({medicamentos: [], fecha: '', pesoMascota: ''})">Agregar nueva tarea</ion-button>
+  </div>
+  <div *ngIf="tareas.length === 0" class="ion-padding">
+    <ion-text color="medium">No hay tareas programadas.</ion-text>
+  </div>
+</ion-content>

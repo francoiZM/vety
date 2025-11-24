@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons'; 
@@ -69,6 +70,12 @@ import {
     IonIcon,IonFooter,IonListHeader,IonMenuToggle]
 })
 export class CalculoDosisPage implements OnInit {
+  horaNotificacion: string = '';
+  diasNotificacion: number = 1;
+
+  // Tareas guardadas
+  tareas: Array<any> = [];
+  tareaProgramada: any = null;
 
   constructor(private router: Router, private route: ActivatedRoute) {
 
@@ -95,6 +102,42 @@ export class CalculoDosisPage implements OnInit {
       }));
     }
   }
- 
+
+  crearTareaRecordatorio() {
+    if (!this.dosisCalculadas.length || !this.horaNotificacion || !this.diasNotificacion) return;
+    const tareas = [];
+    const hoy = new Date();
+    for (let i = 0; i < this.diasNotificacion; i++) {
+      const fecha = new Date(hoy);
+      fecha.setDate(hoy.getDate() + i);
+      const [hora, minutos] = this.horaNotificacion.split(':').map(Number);
+      fecha.setHours(hora, minutos, 0, 0);
+      tareas.push({
+        medicamentos: this.dosisCalculadas,
+        fecha: fecha.toISOString(),
+        pesoMascota: this.pesoMascota
+      });
+      LocalNotifications.schedule({
+        notifications: [
+          {
+            title: 'Recordatorio de Medicación',
+            body: `Debes dar la dosis a tu mascota.`,
+            id: Date.now() + i,
+            schedule: { at: fecha },
+            actionTypeId: '',
+            extra: {
+              medicamentos: this.dosisCalculadas,
+              pesoMascota: this.pesoMascota
+            }
+          }
+        ]
+      });
+    }
+    // Guardar todas las tareas
+    const tareasGuardadas = JSON.parse(localStorage.getItem('tareas') || '[]');
+    localStorage.setItem('tareas', JSON.stringify([...tareasGuardadas, ...tareas]));
+  }
+
 
 }
+
