@@ -62,6 +62,18 @@ El proyecto está desarrollado utilizando las siguientes tecnologías:
 
 ### 4. Patrón Observer
 
-- Implementado a través de RxJS
-- Manejo de eventos y actualizaciones en tiempo real
-- Comunicación entre componentes
+### 5. Integración de periféricos 
+
+#### Cámara (Capacitor Camera)
+
+- Permite capturar y asociar fotos a medicamentos en el inventario.
+- Uso de la API nativa mediante Capacitor para acceder a la cámara del dispositivo.
+- Gestión de permisos: Solicitud y verificación de permisos de cámara al usuario.
+- Persistencia: Las imágenes capturadas se almacenan en localStorage y se asocian a cada medicamento.
+
+#### Notificaciones locales (Capacitor LocalNotifications)
+
+- Recordatorio de dosis y tareas mediante notificaciones programadas.
+- El usuario puede configurar la hora y cantidad de días para recibir recordatorios.
+- Gestión de permisos: Solicitud y verificación de permisos de notificaciones.
+- Persistencia: Las tareas y recordatorios se almacenan en localStorage.

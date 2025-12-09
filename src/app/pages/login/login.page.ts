@@ -25,6 +25,10 @@ import {
   IonIcon,
   IonLabel
 } from '@ionic/angular/standalone';
+import { FirebaseUsuarioService, usuario } from 'src/app/services/firebase-usuario.service';
+
+
+
 
 @Component({
   selector: 'app-login',
@@ -56,7 +60,7 @@ export class LoginPage implements OnInit {
   errorMessage = '';
   success = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private firebaseUsuarioService: FirebaseUsuarioService) {}
 
   ngOnInit() {}
 
@@ -74,12 +78,16 @@ export class LoginPage implements OnInit {
     console.log('Iniciando sesión...');
     console.log('Email:', this.email);
     console.log('Password:', this.password);
-    if(this.email === 'franco' && this.password === '12345') {
-      this.router.navigate(['/inventario-m']);
-    }
-    else {
-      console.log('Credenciales incorrectas');
-      this.errorMessage = 'Credenciales incorrectas. Por favor, inténtalo de nuevo.';
-    }
+    this.firebaseUsuarioService.obtenerUsuarioPorMailyPassword(this.email, this.password).subscribe((usuario: usuario | null) => {
+      if (usuario) {
+        console.log('Usuario encontrado:', usuario);
+        this.success = true;
+        this.errorMessage = '';
+        this.router.navigate(['/inventario-m']);
+      } else {
+        console.log('Credenciales incorrectas');
+        this.errorMessage = 'Credenciales incorrectas. Por favor, inténtalo de nuevo.';
+      }
+    });
   }
 }

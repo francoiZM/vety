@@ -16,21 +16,21 @@
 
   <ion-list *ngIf="tareas.length > 0">
     <ion-list-header>
-      <ion-label>Tareas programadas</ion-label>
+      <ion-label class="tareas-header">Tareas programadas</ion-label>
     </ion-list-header>
-    <ion-item *ngFor="let tarea of tareas; let i = index">
+    <ion-item *ngFor="let tarea of tareas; let i = index" class="tarea-item">
       <ion-label *ngIf="editIndex !== i">
-        <h2>Medicamentos:</h2>
-        <ul>
+        <h2 class="tarea-titulo">Medicamentos</h2>
+        <ul class="tarea-meds">
           <li *ngFor="let med of tarea.medicamentos">
-            {{ med.medicamento }} - Dosis: {{ med.cantidad.toFixed(2) }} ml
+            <span class="med-nombre">{{ med.medicamento }}</span> <span class="med-dosis">- Dosis: {{ med.cantidad.toFixed(2) }} ml</span>
           </li>
         </ul>
-        <p><strong>Peso mascota:</strong> {{ tarea.pesoMascota }} kg</p>
-        <p><strong>Próxima dosis:</strong> {{ tarea.fecha | date:'short' }}</p>
+        <p class="tarea-peso"><strong>Peso mascota:</strong> {{ tarea.pesoMascota }} kg</p>
+        <p class="tarea-fecha"><strong>Próxima dosis:</strong> {{ tarea.fecha | date:'short' }}</p>
       </ion-label>
       <ion-label *ngIf="editIndex === i">
-        <h2>Editar tarea</h2>
+        <h2 class="tarea-titulo">Editar tarea</h2>
         <ion-item>
           <ion-label position="stacked">Hora</ion-label>
           <ion-input type="time" [(ngModel)]="tareaEditando.fecha"></ion-input>
@@ -39,8 +39,10 @@
           <ion-label position="stacked">Peso mascota</ion-label>
           <ion-input type="number" [(ngModel)]="tareaEditando.pesoMascota"></ion-input>
         </ion-item>
-        <ion-button color="success" (click)="guardarEdicion()">Guardar</ion-button>
-        <ion-button color="medium" (click)="cancelarEdicion()">Cancelar</ion-button>
+        <div class="tarea-edicion-btns">
+          <ion-button color="success" (click)="guardarEdicion()">Guardar</ion-button>
+          <ion-button color="medium" (click)="cancelarEdicion()">Cancelar</ion-button>
+        </div>
       </ion-label>
       <ion-button color="danger" fill="clear" slot="end" (click)="eliminarTarea(i)">Eliminar</ion-button>
       <ion-button color="primary" fill="outline" slot="end" (click)="iniciarEdicion(i)" *ngIf="editIndex !== i">Editar</ion-button>

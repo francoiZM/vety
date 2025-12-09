@@ -1,0 +1,43 @@
+.tareas-header {
+	font-size: 1.1em;
+	font-weight: 600;
+	color: var(--ion-color-primary);
+}
+
+.tarea-item {
+	margin-bottom: 12px;
+	border-radius: 10px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+	background: #fff;
+	padding: 8px 0;
+}
+
+.tarea-titulo {
+	margin-bottom: 6px;
+	font-size: 1em;
+	color: var(--ion-color-primary);
+}
+
+.tarea-meds {
+	margin-bottom: 6px;
+	padding-left: 18px;
+}
+
+.med-nombre {
+	font-weight: 500;
+}
+
+.med-dosis {
+	color: var(--ion-color-success);
+}
+
+.tarea-peso, .tarea-fecha {
+	margin-bottom: 2px;
+	font-size: 0.95em;
+}
+
+.tarea-edicion-btns {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}

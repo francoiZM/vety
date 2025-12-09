@@ -5,6 +5,7 @@ import { addIcons } from 'ionicons';
 import {calculatorOutline, addCircleOutline} from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import {Router} from '@angular/router';
+import { FirebaseMedicamentoService, medicamento as MedicamentoDTO } from 'src/app/services/firebase-medicamento.service';
 import {
     IonContent,
     IonHeader,
@@ -33,18 +34,10 @@ import {
     IonIcon, IonFooter,
     IonMenuToggle, IonNote, AlertController
 } from '@ionic/angular/standalone';
+  import { ToastController } from '@ionic/angular';
 
-interface Medicamento {
-  id: number;
-  nombre: string;
-  principioactivo: string;
-  categoria: string;
-  concentracion: string;
-  dosis: string;
-  presentacion: string;
-  selected: boolean;
-  imagen?: string;
-}
+// Usamos la interfaz del servicio y añadimos la propiedad local 'selected'
+type Medicamento = MedicamentoDTO & { selected: boolean };
 
 @Component({
   selector: 'app-inventario-m',
@@ -92,7 +85,7 @@ export class InventarioMPage implements OnInit {
 
   medicamentos: Medicamento[] = [
     {
-      id: 1,
+      id: '1',
       nombre: 'Meloxivet perros',
       principioactivo: 'Meloxicam',
       categoria: 'Antibiótico',
@@ -102,7 +95,7 @@ export class InventarioMPage implements OnInit {
       selected: false
     },
     {
-      id: 2,
+      id: '2',
       nombre: 'Meloxivet gatos',
       principioactivo: 'Meloxicam',
       categoria: 'Analgésico',
@@ -112,7 +105,7 @@ export class InventarioMPage implements OnInit {
       selected: false
     },
     {
-      id: 3,
+      id: '3',
       nombre: 'Rimadyl',
       principioactivo: 'Carprofeno',
       categoria: 'Antiinflamatorio',
@@ -130,7 +123,7 @@ export class InventarioMPage implements OnInit {
   mostrandoFormulario: boolean = false; 
   medicamentosFiltrados: Medicamento[] = [];
 
-  constructor(private router: Router, private fb: FormBuilder, private alertController: AlertController) {
+  constructor(private router: Router, private fb: FormBuilder, private alertController: AlertController, private firebaseMedicamentoService: FirebaseMedicamentoService, private toastController: ToastController) {
     addIcons({
       'calculator-outline': calculatorOutline,
       'add-circle-outline': addCircleOutline,
@@ -153,7 +146,11 @@ export class InventarioMPage implements OnInit {
   }
 
   ngOnInit() {
-    this.FiltrarMedicamento();
+    // Cargar medicamentos desde Firebase y preparar lista filtrada
+    this.firebaseMedicamentoService.obtenerMedicamentos().subscribe((lista) => {
+      this.medicamentos = lista.map(m => ({ ...m, selected: false }));
+      this.FiltrarMedicamento();
+    });
   }
 
 
@@ -167,7 +164,7 @@ export class InventarioMPage implements OnInit {
   //abrir formulario actualizar
   abrirFormularioActualizar(medicamento: Medicamento) {
     this.medicamentoSeleccionado = medicamento;
-    this.medicamentoEnEdicionId = medicamento.id;
+    this.medicamentoEnEdicionId = medicamento.id ? Number(medicamento.id) : null;
     this.crearFormulario(medicamento);
     this.mostrandoFormulario = true;
   }
@@ -184,26 +181,57 @@ export class InventarioMPage implements OnInit {
       datosGuardar.imagen = this.imagenCapturada;
     }
 
-    if (datosGuardar.id) {
-      const index = this.medicamentos.findIndex(med => med.id === datosGuardar.id);
-      if (index !== -1) {
-        this.medicamentos[index] = { ...datosGuardar, selected: this.medicamentos[index].selected };
-      }
-    } else {
-      const nuevoId = this.medicamentos.length > 0 ? Math.max(...this.medicamentos.map(m => m.id)) + 1 : 1;
-      const nuevoMedicamento: Medicamento = { 
-        ...datosGuardar, 
-        id: nuevoId, 
-        selected: false 
-      };
-      this.medicamentos.push(nuevoMedicamento);
-    }
-    this.mostrandoFormulario = false; 
-    this.FiltrarMedicamento(); 
-    this.imagenCapturada = undefined;
+    // Construir payload compatible con Firebase
+    const payload: MedicamentoDTO = {
+      id: (datosGuardar as any).id, // puede ser string en Firebase
+      nombre: datosGuardar.nombre,
+      principioactivo: datosGuardar.principioactivo,
+      categoria: datosGuardar.categoria,
+      concentracion: datosGuardar.concentracion,
+      dosis: datosGuardar.dosis,
+      presentacion: datosGuardar.presentacion,
+      imagen: datosGuardar.imagen,
+    };
+
+    const accion = payload.id
+      ? this.firebaseMedicamentoService.actualizarMedicamento(payload)
+      : this.firebaseMedicamentoService.agregarMedicamento(payload);
+
+    accion
+      .then(async () => {
+        const toast = await this.toastController.create({
+          message: payload.id ? 'Medicamento actualizado' : 'Medicamento creado',
+          duration: 1500,
+          color: 'success',
+          position: 'bottom'
+        });
+        await toast.present();
+      })
+      .catch(async (err) => {
+        console.error('Error guardando medicamento:', err);
+        const toast = await this.toastController.create({
+          message: 'Error al guardar el medicamento',
+          duration: 2000,
+          color: 'danger',
+          position: 'bottom'
+        });
+        await toast.present();
+      })
+      .finally(() => {
+        this.mostrandoFormulario = false;
+        if (this.formularioMedicamento) {
+          this.formularioMedicamento.reset();
+        }
+        this.medicamentoSeleccionado = null;
+        this.imagenCapturada = undefined;
+        this.FiltrarMedicamento();
+      });
   }
   //eliminar con confirmacion
-  async confirmarYEliminar(id: number) {
+  async confirmarYEliminar(id: string | undefined) {
+    if (!id) {
+      return;
+    }
     const alert = await this.alertController.create({ 
       header: 'Confirmar Eliminación',
       message: '¿Estás seguro de que quieres eliminar este medicamento del inventario? Esta acción es irreversible.',
@@ -217,7 +245,7 @@ export class InventarioMPage implements OnInit {
           cssClass: 'alert-button-danger',
           handler: () => {
             this.eliminarMedicamento(id);
-            if (this.medicamentoSeleccionado && this.medicamentoSeleccionado.id === id) {
+            if (this.medicamentoSeleccionado && this.medicamentoSeleccionado.id === String(id)) {
                 this.mostrandoFormulario = false; 
             }
           }
@@ -230,33 +258,51 @@ export class InventarioMPage implements OnInit {
 
 
   //crear medicamento
-  crearMedicamento() {
-    const nuevoMedicamento = {
-      id: this.medicamentos.length + 1,
+  async crearMedicamento() {
+    // Opcional: capturar foto con la cámara al crear
+    let imagenDataUrl: string | undefined;
+    try {
+      const foto = await Camera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+      imagenDataUrl = foto.dataUrl;
+    } catch (e) {
+      // Si el usuario cancela o hay error, continuamos sin imagen
+      imagenDataUrl = undefined;
+    }
+
+    const nuevoMedicamento: MedicamentoDTO = {
       nombre: 'Nuevo Medicamento',
       principioactivo: 'principio activo',
       categoria: 'Categoría',
       concentracion: 'Concentración',
       dosis: 'Dosis',
       presentacion: 'Presentación',
-      selected: false
+      imagen: imagenDataUrl,
     };
-    this.medicamentos.push(nuevoMedicamento);
+    await this.firebaseMedicamentoService.agregarMedicamento(nuevoMedicamento);
     this.FiltrarMedicamento();
   }
 
   //eliminar medicamento
-eliminarMedicamento(id: number) {
-     this.medicamentos = this.medicamentos.filter(med => med.id !== id);
-     this.FiltrarMedicamento(); 
+eliminarMedicamento(id: string) {
+  this.firebaseMedicamentoService.eliminarMedicamento(id).then(() => {
+       this.FiltrarMedicamento(); 
+     });
   }
 
   //acualizar medicamento con textos nombre, categoria, presentacion
 
   actualizarMedicamento(id: number, campo: 'nombre' | 'categoria' | 'presentacion' | 'principioactivo' | 'concentracion', valor: string) {
-    const medicamento = this.medicamentos.find(med => med.id === id);
+    const medicamento = this.medicamentos.find(med => med.id === String(id));
     if (medicamento) {
       medicamento[campo] = valor;
+      // Persistimos el cambio en Firebase
+      const payload: MedicamentoDTO = { ...medicamento };
+      this.firebaseMedicamentoService.actualizarMedicamento(payload);
       this.FiltrarMedicamento();
     }
   }
@@ -307,9 +353,11 @@ eliminarMedicamento(id: number) {
       // La imagen se mostrará en el formulario y se guardará al guardarMedicamento
       // Si estamos editando, actualizamos la imagen en el objeto seleccionado
       if (this.medicamentoEnEdicionId) {
-        const med = this.medicamentos.find(m => m.id === this.medicamentoEnEdicionId);
+        const med = this.medicamentos.find(m => Number(m.id) === this.medicamentoEnEdicionId);
         if (med) {
           med.imagen = this.imagenCapturada;
+          const payload: MedicamentoDTO = { ...med };
+          this.firebaseMedicamentoService.actualizarMedicamento(payload);
         }
       }
     } catch (e) {

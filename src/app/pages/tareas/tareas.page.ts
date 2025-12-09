@@ -16,6 +16,7 @@ import {
   IonButtons,
   IonMenuButton
 } from '@ionic/angular/standalone';
+import { FirebaseTareaService, tarea as TareaDTO } from 'src/app/services/firebase-tarea.service';
 
 @Component({
   selector: 'app-tareas',
@@ -46,22 +47,25 @@ export class TareasPage implements OnInit {
 
   tareas: Array<any> = [];
 
-  constructor() { }
+  constructor(private firebaseTareaService: FirebaseTareaService) { }
 
   ngOnInit() {
     this.cargarTareas();
   }
 
   cargarTareas() {
-    const tareasGuardadas = localStorage.getItem('tareas');
-    if (tareasGuardadas) {
-      this.tareas = JSON.parse(tareasGuardadas);
-    }
+    this.firebaseTareaService.obtenerTareas().subscribe((lista) => {
+      this.tareas = lista;
+    });
   }
 
   eliminarTarea(index: number) {
-    this.tareas.splice(index, 1);
-    localStorage.setItem('tareas', JSON.stringify(this.tareas));
+    const t = this.tareas[index] as TareaDTO;
+    if (t?.id) {
+      this.firebaseTareaService.eliminarTarea(t.id).then(() => {
+        // la lista se actualizará por la suscripción
+      });
+    }
   }
 
   iniciarEdicion(index: number) {
@@ -71,10 +75,17 @@ export class TareasPage implements OnInit {
 
   guardarEdicion() {
     if (this.editIndex !== null && this.tareaEditando) {
-      this.tareas[this.editIndex] = { ...this.tareaEditando };
-      localStorage.setItem('tareas', JSON.stringify(this.tareas));
-      this.editIndex = null;
-      this.tareaEditando = null;
+      const original = this.tareas[this.editIndex] as TareaDTO;
+      const actualizada: TareaDTO = {
+        id: original.id,
+        medicamentos: this.tareaEditando.medicamentos || original.medicamentos,
+        fecha: this.tareaEditando.fecha || original.fecha,
+        pesoMascota: this.tareaEditando.pesoMascota || original.pesoMascota,
+      };
+      this.firebaseTareaService.actualizarTarea(actualizada).then(() => {
+        this.editIndex = null;
+        this.tareaEditando = null;
+      });
     }
   }
 
@@ -84,8 +95,12 @@ export class TareasPage implements OnInit {
   }
 
   agregarTarea(tarea: any) {
-    this.tareas.push(tarea);
-    localStorage.setItem('tareas', JSON.stringify(this.tareas));
+    const nueva: TareaDTO = {
+      medicamentos: tarea.medicamentos || [],
+      fecha: tarea.fecha || new Date().toISOString(),
+      pesoMascota: tarea.pesoMascota || 0,
+    };
+    this.firebaseTareaService.agregarTarea(nueva);
   }
 
 }
