@@ -1,0 +1,274 @@
+# Sincronización con Firebase: funciones, flujo e interacciones (VETy)
+
+Este documento describe exhaustivamente todas las funciones usadas para integrar y sincronizar datos con Firebase Realtime Database en la app VETy. Se detalla para cada servicio y página: su propósito, cómo funcionan, entradas y salidas, eventos y dependencias, y cómo interactúan entre sí.
+
+---
+
+## 1) Bootstrap y configuración
+
+Archivo: `src/main.ts`
+- **provideFirebaseApp(() => initializeApp(environment.firebaseConfig))**
+  - Función: Inicializa la app de Firebase usando la configuración definida en `environment`.
+  - Cómo: Invoca `initializeApp` pasando el objeto `firebaseConfig`. Este registro es necesario para que los servicios usen Firebase.
+  - Interacciones: Los servicios `FirebaseUsuarioService`, `FirebaseMedicamentoService`, `FirebaseTareaService` dependen de esta inicialización para obtener el `Database`.
+
+- **provideDatabase(() => getDatabase())**
+  - Función: Expone el Realtime Database para inyección en servicios Angular (`Database`).
+  - Cómo: Llama a `getDatabase()` y lo registra en el contenedor de inyección.
+  - Interacciones: Los servicios Firebase utilizan este `Database` para leer/escribir.
+
+---
+
+## 2) Servicio de Usuarios
+
+Archivo: `src/app/services/firebase-usuario.service.ts`
+Interfaz: `usuario`
+- Estructura: `{ id?: string, nombre: string, email: string, password: string, rol: string, imagen?: string }`
+- Propósito: Representa el documento de usuario en Realtime Database.
+
+Clase: `FirebaseUsuarioService`
+- Dependencia: `Database` inyectado por AngularFire.
+
+Funciones:
+- **agregarUsuario(usuario: usuario): Promise<void>**
+  - Función: Inserta un nuevo usuario en la ruta `usuarios` y asigna `id` generado por Firebase.
+  - Cómo: 
+    1. `ref(database, 'usuarios')` obtiene referencia.
+    2. `push(...)` crea un nodo con key única.
+    3. `set(newRef, usuario)` persiste el objeto.
+    4. Asigna `usuario.id = newRef.key` para coherencia.
+  - Entradas: `usuario` sin id.
+  - Salidas: `Promise<void>`; al resolverse, el usuario está creado.
+  - Interacciones: Desde `RegistroPage` al guardar nuevos usuarios.
+
+- **obtenerUsuarios(): Observable<usuario[]>**
+  - Función: Lee la colección `usuarios` en tiempo real.
+  - Cómo: 
+    1. `onValue(ref, callback)` escucha cambios.
+    2. Itera `snapshot.forEach` recopilando usuarios; agrega `id` desde `child.key`.
+    3. `observer.next(usuarios)` emite el array en cada cambio.
+  - Salidas: `Observable` que emite arrays actualizados.
+  - Interacciones: Puede usarse en listados o administración.
+
+- **eliminarUsuario(id: string): Promise<void>**
+  - Función: Elimina el nodo `usuarios/{id}`.
+  - Cómo: `remove(ref(database, 'usuarios/id'))`.
+  - Interacciones: Flujos de administración de usuarios.
+
+- **actualizarUsuario(usuario: usuario): Promise<void>**
+  - Función: Sobrescribe el nodo `usuarios/{id}` con el objeto completo.
+  - Cómo: `set(ref, usuario)`.
+  - Requisito: `usuario.id` debe existir.
+
+- **obtenerUsuarioPorMailyPassword(email, password): Observable<usuario | null>**
+  - Función: Busca un usuario cuyo `email` y `password` coincidan.
+  - Cómo: Lee `usuarios` con `onValue` y recorre `snapshot` para encontrar coincidencia.
+  - Salida: `Observable` que emite el usuario encontrado o `null`.
+  - Interacciones: Utilizado por `LoginPage` para autenticar (modelo simple).
+
+Página: `src/app/pages/login/login.page.ts`
+- **login()**
+  - Función: Suscribe a `obtenerUsuarioPorMailyPassword`, verifica credenciales y navega a `inventario-m` si es correcto.
+  - Interacción: Con `FirebaseUsuarioService` para lectura; con Router para navegación.
+
+---
+
+## 3) Servicio de Medicamentos
+
+Archivo: `src/app/services/firebase-medicamento.service.ts`
+Interfaz: `medicamento`
+- Estructura: `{ id?: string, nombre, principioactivo, categoria, concentracion, dosis, presentacion, imagen? }`
+- Propósito: Representa medicamentos en Realtime Database.
+
+Clase: `FirebaseMedicamentoService`
+Funciones:
+- **agregarMedicamento(medicamento: medicamento): Promise<void>**
+  - Función: Crea un medicamento en `medicamentos`, asigna `id` desde `push` y persiste con `set`.
+  - Entradas: Objeto sin id.
+  - Salidas: `Promise<void>`.
+  - Interacciones: Usado por `InventarioMPage` para crear (incluyendo imagen capturada por cámara).
+
+- **obtenerMedicamentos(): Observable<medicamento[]>**
+  - Función: Suscripción en tiempo real a la lista de medicamentos.
+  - Cómo: Usa `onValue` y `snapshot.forEach` para construir el array; adjunta `id`.
+  - Interacciones: `InventarioMPage` se suscribe para mostrar y filtrar.
+
+- **eliminarMedicamento(id: string): Promise<void>**
+  - Función: Borra `medicamentos/{id}`.
+
+- **actualizarMedicamento(medicamento: medicamento): Promise<void>**
+  - Función: Sobrescribe el nodo con el objeto actualizado.
+  - Requisito: `medicamento.id` existente.
+
+Página: `src/app/pages/inventario-m/inventario-m.page.ts`
+Tipo local: `type Medicamento = MedicamentoDTO & { selected: boolean }`
+- Propósito: Extiende el DTO para manejo de selección en UI (no se persiste).
+
+Funciones principales:
+- **ngOnInit()**
+  - Función: Suscribe a `obtenerMedicamentos` para poblar `medicamentos` y marca `selected = false`.
+  - Interacciones: Se actualiza la lista `medicamentosFiltrados` con `FiltrarMedicamento()`.
+
+- **crearFormulario(medicamento?)**
+  - Función: Inicializa `FormGroup` para crear/editar.
+  - Interacción: Pre-carga imagen si existe.
+
+- **abrirFormularioCrear() / abrirFormularioActualizar(medicamento)**
+  - Función: Controlan estado de edición/alta, setean `medicamentoSeleccionado` y `medicamentoEnEdicionId`.
+
+- **guardarMedicamento()**
+  - Función: Valida formulario, arma payload `MedicamentoDTO`, y según `id` llama a `actualizarMedicamento` o `agregarMedicamento`.
+  - Cómo:
+    1. Si hay `imagenCapturada`, la añade al payload.
+    2. Invoca acción Firebase (`Promise`).
+    3. En `finally`, cierra formulario, resetea `FormGroup`, limpia imagen/selección, y refresca filtro.
+    4. En `then/catch` muestra toasts de éxito/error.
+  - Interacciones: Con `FirebaseMedicamentoService` para CRUD; con `ToastController` para feedback.
+
+- **confirmarYEliminar(id)**
+  - Función: Muestra alert de confirmación y llama a `eliminarMedicamento(id)`.
+  - Nota: Acepta `string | undefined` porque el id proviene del formulario o tarjeta.
+
+- **eliminarMedicamento(id: string)**
+  - Función: Invoca servicio Firebase y luego refresca filtro (la lista se actualiza por suscripción).
+
+- **actualizarMedicamento(id, campo, valor)**
+  - Función: Actualiza un campo en el objeto local, persiste con `actualizarMedicamento(payload)` y refresca filtro.
+
+- **FiltrarMedicamento()**
+  - Función: Aplica filtros por nombre/categoría/principio activo.
+
+- **seleccionarMedicamento(medicamento)** / **haySeleccionados()**
+  - Función: Gestión de selección en UI.
+
+- **CalcularDosis()**
+  - Función: Navega a `calculo-dosis` pasando medicamentos seleccionados como `queryParams` (JSON).
+
+- **tomarFoto()**
+  - Función (periférico cámara): Captura imagen vía Capacitor Camera (resultType: DataUrl). Si se está editando, actualiza imagen del medicamento y persiste en Firebase.
+
+- **crearMedicamento()**
+  - Función: Flujo opcional de creación con captura de foto inicial (si el usuario acepta la cámara). Persiste en Firebase.
+
+Interacciones clave:
+- Servicio Firebase proporciona CRUD; la página mantiene estado de selección y formulario; cámara alimenta campo `imagen`.
+
+---
+
+## 4) Servicio de Tareas
+
+Archivo: `src/app/services/firebase-tarea.service.ts`
+Interfaz: `tarea`
+- Estructura: `{ id?: string, medicamentos: Array<{medicamento: string; cantidad: number}>, fecha: string, pesoMascota: number|string }`
+- Propósito: Representa recordatorios programados.
+
+Clase: `FirebaseTareaService`
+Funciones:
+- **agregarTarea(tarea: tarea): Promise<void>**
+  - Función: Inserta en `tareas`, asignando `id` con `push` y persistiendo con `set`.
+
+- **obtenerTareas(): Observable<tarea[]>**
+  - Función: Suscribe a cambios en `tareas` con `onValue`, convierte snapshots a objetos con `id`.
+
+- **eliminarTarea(id: string): Promise<void>**
+  - Función: Borra `tareas/{id}`.
+
+- **actualizarTarea(tarea: tarea): Promise<void>**
+  - Función: Sobrescribe `tareas/{id}` con el objeto actualizado.
+
+Página: `src/app/pages/tareas/tareas.page.ts`
+Funciones:
+- **cargarTareas()**
+  - Función: Suscribe a `obtenerTareas()` y llena `tareas` en tiempo real.
+
+- **agregarTarea(tarea)**
+  - Función: Crea una tarea nueva con defaults (`fecha` actual ISO, `pesoMascota` 0 si no se pasa) y llama a `agregarTarea` del servicio.
+
+- **eliminarTarea(index)**
+  - Función: Obtiene tarea por índice, y si tiene `id`, llama a `eliminarTarea(id)`.
+
+- **iniciarEdicion(index)** / **guardarEdicion()** / **cancelarEdicion()**
+  - Función: Maneja edición en UI; arma un objeto `actualizada` con merges y llama a `actualizarTarea` (Firebase). Al terminar limpia estado de edición.
+
+Interacciones clave:
+- Se recibe programación de tareas desde `CalculoDosisPage` (guardadas en Firebase), y esta página las muestra/edita/elimina.
+
+---
+
+## 5) Cálculo de Dosis + Notificaciones Locales
+
+Archivo: `src/app/pages/calculo-dosis/calculo-dosis.page.ts`
+Periférico: Capacitor Local Notifications
+
+Funciones:
+- **ngOnInit()**
+  - Función: Lee medicamentos seleccionados desde `queryParams` y prepara notificaciones en Android.
+  - Cómo: 
+    1. `LocalNotifications.requestPermissions()` solicita permisos.
+    2. `LocalNotifications.createChannel({...})` crea el canal `recordatorios-dosis` con configuración de importancia, visibilidad, sonido, vibración (requerido en Android 8+).
+
+- **calcularDosis()**
+  - Función: Calcula dosis por medicamento usando la fórmula `peso * dosisPorKg / concentración`. Genera `dosisCalculadas`.
+
+- **crearTareaRecordatorio()**
+  - Función: Programa tareas y notificaciones para múltiples días.
+  - Cómo: 
+    1. Para `i` desde 0 hasta `diasNotificacion - 1`, calcula `fecha` agregando días y setea `hora:minutos`.
+    2. Crea `TareaDTO` con medicamentos, `fecha` (ISO), `pesoMascota` y la guarda en `FirebaseTareaService.agregarTarea`.
+    3. Genera `notifId` entero seguro (`Math.floor((Date.now() % 2147483647) + i)`) y llama `LocalNotifications.schedule({ notifications: [...] })` con `channelId: 'recordatorios-dosis'` y `schedule.at = fecha`.
+  - Notas: El `id` de la notificación debe ser un int Java válido para Android (evitar usar `Date.now()` sin mod).
+
+- **probarNotificacion()**
+  - Función: Dispara una notificación de prueba a 2 segundos para verificar permisos y canal.
+  - Cómo: Verifica/solicita permisos, genera `testId` entero (`Date.now() % 2147483647`), programa la notificación con `channelId`.
+
+Interacciones clave:
+- Guarda tareas en Firebase para consumo por `TareasPage`.
+- Usa Local Notifications para recordar; requiere permisos y canales en Android.
+
+---
+
+## 6) Flujo de Interacción entre Módulos
+
+- **RegistroPage → FirebaseUsuarioService**
+  - Crea usuarios y navega a login. Login usa lectura por mail/password.
+
+- **InventarioMPage → FirebaseMedicamentoService**
+  - CRUD de medicamentos; integra cámara para `imagen`.
+
+- **CalculoDosisPage → FirebaseTareaService + LocalNotifications**
+  - Calcula dosis, programa tareas (persistencia en Firebase) y notificaciones locales.
+
+- **TareasPage → FirebaseTareaService**
+  - Suscribe listado en tiempo real; permite editar/eliminar; refleja lo creado desde cálculo de dosis.
+
+---
+
+## 7) Buenas Prácticas y Consideraciones
+
+- **Tipos de ID**: En Firebase las keys son strings; en la app se debe usar `string` para ids y nunca asumir `number` salvo conversiones puntuales para UI.
+- **Notificaciones en Android**: Siempre crear `channelId` y usar IDs int válidos (< 2^31). Solicitar permisos.
+- **Cámara (Data URL)**: `resultType: DataUrl` facilita persistir la imagen directamente como string; considerar límites de tamaño si se almacena en Realtime Database.
+- **Observables**: El patrón de `onValue` crea streams en tiempo real; la UI se actualiza automáticamente al cambiar datos.
+- **Resets y feedback**: Tras guardar/actualizar/eliminar, resetear formularios/estado y mostrar toasts para mejor UX.
+
+---
+
+## 8) Resumen de Entradas/Salidas por Función
+
+- agregarUsuario / agregarMedicamento / agregarTarea
+  - Entrada: Objeto DTO (sin id). Salida: Promesa resuelta al crear; id asignado.
+- obtenerUsuarios / obtenerMedicamentos / obtenerTareas
+  - Salida: Observable con arrays; se emite al cambiar datos.
+- actualizarUsuario / actualizarMedicamento / actualizarTarea
+  - Entrada: Objeto con `id`. Salida: Promesa; sobrescribe el nodo.
+- eliminarUsuario / eliminarMedicamento / eliminarTarea
+  - Entrada: `id` string. Salida: Promesa; elimina nodo.
+- LocalNotifications.schedule
+  - Entrada: Lista de notificaciones con `id` int, `channelId`, `schedule.at` Date. Salida: Programación en sistema.
+- Camera.getPhoto
+  - Entrada: opciones (quality, source, resultType). Salida: objeto con `dataUrl` que se usa para `imagen`.
+
+---
+
+Este documento sirve como guía integral de la sincronización con Firebase y periféricos (cámara y notificaciones), explicando el propósito y mecánica de cada función y cómo se integran para ofrecer un flujo completo: usuarios, inventario de medicamentos, cálculo de dosis, tareas y recordatorios.
